@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0a0c12" />
+    <meta name="description" content="Roll a randomized VALORANT loadout for any agent." />
+    <title>VAL//WHEEL — Valorant Loadout Randomizer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;0,800;1,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="noise" aria-hidden="true"></div>
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="VAL WHEEL home">
+        <span class="brand-mark">V</span>
+        <span>VAL<span>//</span>WHEEL</span>
+      </a>
+      <div class="top-actions">
+        <button class="icon-button" id="soundButton" aria-label="Toggle sound" aria-pressed="true" title="Toggle sound">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4Zm12.5-.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="eyebrow"><span>LOADOUT PROTOCOL</span><b>01 / SELECT</b></div>
+        <h1>LET FATE<br/><em>BUY YOUR ROUND.</em></h1>
+        <p>Pick your agent. Pull the trigger. Play what you roll.</p>
+      </section>
+
+      <section class="agent-panel" aria-labelledby="agent-heading">
+        <div class="section-number">01</div>
+        <div class="agent-copy">
+          <span class="section-label">SELECT YOUR OPERATIVE</span>
+          <h2 id="agent-heading">Choose an agent</h2>
+        </div>
+        <div class="setup-controls">
+          <div class="agent-picker">
+            <span class="picker-avatar" id="pickerAvatar">J</span>
+            <div class="agent-field">
+              <label for="agentSelect">SELECT AGENT</label>
+              <div class="select-wrap">
+                <span class="role-dot" id="roleDot"></span>
+                <select id="agentSelect" aria-label="Select agent"></select>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
+              </div>
+            </div>
+            <button class="shuffle-button" id="randomAgent" title="Choose a random agent" aria-label="Choose a random agent">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section class="machine-shell" aria-labelledby="machine-heading">
+        <div class="machine-head">
+          <div>
+            <span class="section-label">LOADOUT GENERATOR</span>
+            <h2 id="machine-heading">YOUR NEXT ROUND</h2>
+          </div>
+          <div class="wheel-credits credits-picker">
+            <label for="creditsInput">YOUR ROUND CREDITS</label>
+            <div class="credits-wrap">
+              <span>¤</span>
+              <input id="creditsInput" type="number" min="0" max="9000" step="50" value="4500" inputmode="numeric" aria-describedby="creditsHelp" />
+            </div>
+            <small id="creditsHelp">SET BUDGET • MAX 9,000</small>
+          </div>
+          <div class="loadout-summary">
+            <div class="cost-readout"><small>LOADOUT COST</small><b><span id="loadoutCost">0</span> / <span id="budgetTotal">4,500</span></b></div>
+            <div class="agent-chip">
+            <span id="agentInitial">J</span>
+            <div><b id="activeAgent">JETT</b><small id="activeRole">DUELIST</small></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="reels" id="reels" aria-live="polite"></div>
+
+        <div class="machine-controls">
+          <p>CLICK A REEL TO HOLD IT BETWEEN SPINS</p>
+          <button class="spin-button" id="spinButton">
+            <span class="button-corners" aria-hidden="true"></span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v6h-6"/></svg>
+            <span>SPIN LOADOUT</span>
+            <small id="spinCount">∞</small>
+          </button>
+          <button class="copy-button" id="copyButton" title="Copy this loadout">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="11" height="11" rx="1"/><path d="M16 8V5H5v11h3"/></svg>
+            COPY RESULT
+          </button>
+        </div>
+      </section>
+
+      <section class="rules">
+        <span class="section-label">HOW TO PLAY</span>
+        <div class="rule-grid">
+          <article><b>01</b><h3>LOCK YOUR AGENT</h3><p>Choose any operative from the full roster.</p></article>
+          <article><b>02</b><h3>SET YOUR ECONOMY</h3><p>Enter your credits. Every complete roll stays within budget.</p></article>
+          <article><b>03</b><h3>COMMIT TO THE CHAOS</h3><p>Buy what you rolled. No rerolls after the barrier drops.</p></article>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <span>VAL//WHEEL</span>
+      <p>Fan-made challenge tool. Not affiliated with Riot Games.</p>
+      <b>GG // GO NEXT</b>
+    </footer>
+    <div class="toast" id="toast" role="status">LOADOUT COPIED</div>
+    <script src="app.js"></script>
+  </body>
+</html>
