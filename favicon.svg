@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="VAL WHEEL logo">
+  <rect width="64" height="64" rx="10" fill="#080a0f"/>
+  <path fill="#ff4655" d="M10 10h14l8 25 8-25h14L39 54H25L10 10Z"/>
+  <path fill="#f3f0e7" d="m26 10 6 18 6-18h-5l-1 4-1-4h-5Z"/>
+</svg>

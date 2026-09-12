@@ -135,9 +135,9 @@ function decorateCurrentResults() {
     }
   });
   const badge = $('#agentInitial');
-  if (state.agent.icon) badge.innerHTML = `<img src="${state.agent.icon}" alt="${state.agent.name}" />`;
+  if (state.agent.icon) badge.innerHTML = `<img src="${state.agent.icon}" alt="${state.agent.name} agent portrait" width="44" height="44" decoding="async" />`;
   const pickerBadge = $('#pickerAvatar');
-  if (state.agent.icon) pickerBadge.innerHTML = `<img src="${state.agent.icon}" alt="" />`;
+  if (state.agent.icon) pickerBadge.innerHTML = `<img src="${state.agent.icon}" alt="" width="58" height="58" decoding="async" />`;
   renderReels();
 }
 
@@ -202,7 +202,7 @@ function renderReels() {
     reel.dataset.kind = item.kind;
     reel.dataset.index = index;
     reel.title = state.held.has(index) ? 'Click to release reel' : 'Click to hold reel';
-    const icon = item.icon ? `<img src="${item.icon}" alt="" />` : item.fallback;
+    const icon = item.icon ? `<img src="${item.icon}" alt="${item.value} ${item.kind} icon" width="66" height="56" loading="lazy" decoding="async" />` : item.fallback;
     const chargeMeter = item.kind === 'ability' && item.maxUses > 1
       ? `<span class="charge-meter" role="img" aria-label="${item.quantity} of ${item.maxUses} uses">${Array.from({length:item.maxUses}, (_, chargeIndex) => `<i class="${chargeIndex >= item.maxUses - item.quantity ? 'filled' : ''}"></i>`).join('')}</span>`
       : '';
@@ -235,8 +235,8 @@ function updateAgent(name) {
   document.documentElement.style.setProperty('--agent', roleColors[state.agent.role]);
   state.results = createResult(state.agent, []);
   renderReels();
-  if (state.agent.icon) $('#agentInitial').innerHTML = `<img src="${state.agent.icon}" alt="${state.agent.name}" />`;
-  if (state.agent.icon) $('#pickerAvatar').innerHTML = `<img src="${state.agent.icon}" alt="" />`;
+  if (state.agent.icon) $('#agentInitial').innerHTML = `<img src="${state.agent.icon}" alt="${state.agent.name} agent portrait" width="44" height="44" decoding="async" />`;
+  if (state.agent.icon) $('#pickerAvatar').innerHTML = `<img src="${state.agent.icon}" alt="" width="58" height="58" decoding="async" />`;
 }
 
 function toggleHold(index) {
