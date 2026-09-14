@@ -80,7 +80,7 @@ const keys = ['C','Q','E','X'];
 const REGULAR_SPIN_RECHARGE_SECONDS = 15;
 const state = {
   agent: agents.find(a => a.name === 'Jett'), results: [], held: new Set(), spinning: false,
-  sound: true, budget:4500, weaponMode:'both', allowRespin:true, respinAvailable:false,
+  sound: true, budget:4500, weaponMode:'both', allowRespin:false, respinAvailable:false,
   rechargeRemaining:0, rechargeTimer:null
 };
 
