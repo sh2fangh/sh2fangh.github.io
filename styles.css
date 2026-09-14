@@ -95,6 +95,23 @@ main { width: min(1180px, calc(100% - 44px)); margin: 0 auto; }
 .agent-chip b { font: 700 15px/1 var(--display); letter-spacing: 1px; }
 .agent-chip small { color: var(--muted); font: 600 8px/1 var(--body); letter-spacing: 1.4px; }
 
+.wheel-settings { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 20px 0; border-bottom: 1px solid var(--line); }
+.weapon-setting { display: flex; gap: 6px; margin: 0; padding: 0; border: 0; }
+.weapon-setting legend { float: left; align-self: center; margin-right: 12px; color: var(--muted); font: 700 8px/1 var(--body); letter-spacing: 1.4px; }
+.weapon-setting label { cursor: pointer; }
+.weapon-setting input, .respin-setting input { position: absolute; opacity: 0; pointer-events: none; }
+.weapon-setting span { display: grid; place-items: center; min-width: 92px; height: 34px; padding: 0 12px; color: #777b86; border: 1px solid var(--line); font: 700 9px/1 var(--body); letter-spacing: 1px; transition: .2s; }
+.weapon-setting input:checked + span { color: var(--ink); border-color: var(--red); background: rgba(255,70,85,.12); }
+.weapon-setting input:focus-visible + span, .respin-setting input:focus-visible + .toggle-track { outline: 2px solid var(--cyan); outline-offset: 3px; }
+.respin-setting { display: flex; align-items: center; gap: 11px; cursor: pointer; }
+.respin-setting > span:last-child { display: grid; gap: 4px; }
+.respin-setting b { font: 700 9px/1 var(--body); letter-spacing: 1.1px; }
+.respin-setting small { color: var(--muted); font: 600 7px/1 var(--body); letter-spacing: .8px; }
+.toggle-track { width: 40px; height: 21px; position: relative; flex: 0 0 auto; border: 1px solid #444955; background: #191d27; transition: .2s; }
+.toggle-track i { width: 13px; height: 13px; position: absolute; top: 3px; left: 4px; background: #686d78; transition: .2s; }
+.respin-setting input:checked + .toggle-track { border-color: var(--cyan); background: rgba(83,231,219,.1); }
+.respin-setting input:checked + .toggle-track i { left: 21px; background: var(--cyan); }
+
 .reels { display: grid; grid-template-columns: repeat(2, minmax(180px, 1fr)); gap: 9px; margin: 28px 0; }
 .reel { height: 170px; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; padding: 18px; border: 1px solid var(--line); background: linear-gradient(145deg, #181c26, #11141c); cursor: pointer; user-select: none; transition: border-color .2s, transform .2s; }
 .reel:hover { border-color: rgba(255,70,85,.7); transform: translateY(-2px); }
@@ -152,6 +169,7 @@ footer b { justify-self: end; color: #4f535d; font: 700 9px/1 var(--body); lette
 
 @media (min-width: 900px) {
   .reels { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .reels.many-reels { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .reel { height: 240px; }
   .reel-value b { font-size: clamp(21px, 1.9vw, 29px); white-space: normal; overflow-wrap: anywhere; }
 }
@@ -170,6 +188,7 @@ footer b { justify-self: end; color: #4f535d; font: 700 9px/1 var(--body); lette
   .loadout-summary { gap: 12px; }
   .cost-readout { padding-right: 12px; }
   .machine-controls { grid-template-columns: 1fr; }
+  .wheel-settings { align-items: flex-start; flex-direction: column; }
   .machine-controls p { text-align: center; }
   .spin-button { width: 100%; }
   .copy-button { justify-self: center; }

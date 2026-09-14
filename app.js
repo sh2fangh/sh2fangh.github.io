@@ -1,5 +1,5 @@
 const agents = [
-  {name:'Astra', role:'Controller', abilities:['Gravity Well','Nova Pulse','Nebula / Dissipate','Astral Form / Cosmic Divide']},
+  {name:'Astra', role:'Controller', abilities:['Gravity Well','Nova Pulse','Nebula / Dissipate','Stars','Cosmic Divide']},
   {name:'Breach', role:'Initiator', abilities:['Aftershock','Flashpoint','Fault Line','Rolling Thunder']},
   {name:'Brimstone', role:'Controller', abilities:['Stim Beacon','Incendiary','Sky Smoke','Orbital Strike']},
   {name:'Chamber', role:'Sentinel', abilities:['Trademark','Headhunter','Rendezvous','Tour De Force']},
@@ -18,7 +18,7 @@ const agents = [
   {name:'Omen', role:'Controller', abilities:['Shrouded Step','Paranoia','Dark Cover','From the Shadows']},
   {name:'Phoenix', role:'Duelist', abilities:['Blaze','Curveball','Hot Hands','Run it Back']},
   {name:'Raze', role:'Duelist', abilities:['Boom Bot','Blast Pack','Paint Shells','Showstopper']},
-  {name:'Reyna', role:'Duelist', abilities:['Leer','Devour','Dismiss','Empress']},
+  {name:'Reyna', role:'Duelist', abilities:['Leer','Devour / Dismiss','Empress']},
   {name:'Sage', role:'Sentinel', abilities:['Barrier Orb','Slow Orb','Healing Orb','Resurrection']},
   {name:'Skye', role:'Initiator', abilities:['Regrowth','Trailblazer','Guiding Light','Seekers']},
   {name:'Sova', role:'Initiator', abilities:['Owl Drone','Shock Bolt','Recon Bolt','Hunter’s Fury']},
@@ -43,7 +43,8 @@ const shields = [
   {name:'Heavy Shield', hp:'50 HP', cost:1000, icon:null}
 ];
 const utilityData = {
-  'Gravity Well':{cost:150,max:1,free:1},'Nova Pulse':{cost:150,max:1},'Nebula / Dissipate':{cost:150,max:2},
+  // Astra buys Stars, not separate uses of the three abilities that consume them.
+  'Gravity Well':{fixed:true},'Nova Pulse':{fixed:true},'Nebula / Dissipate':{fixed:true},'Stars':{cost:150,max:5,free:1,noun:'STARS'},
   'Aftershock':{cost:200,max:1},'Flashpoint':{cost:250,max:2},'Fault Line':{cost:0,max:1,free:1},
   'Stim Beacon':{cost:200,max:1},'Incendiary':{cost:250,max:1},'Sky Smoke':{cost:100,max:3,free:1},
   'Trademark':{cost:200,max:1},'Headhunter':{cost:100,max:8},'Rendezvous':{cost:0,max:1,free:1},
@@ -62,7 +63,8 @@ const utilityData = {
   'Shrouded Step':{cost:100,max:2},'Paranoia':{cost:250,max:1},'Dark Cover':{cost:150,max:2,free:1},
   'Blaze':{cost:150,max:1},'Hot Hands':{cost:200,max:1},'Curveball':{cost:250,max:2,free:1},
   'Boom Bot':{cost:300,max:1},'Blast Pack':{cost:200,max:2},'Paint Shells':{cost:0,max:1,free:1},
-  'Leer':{cost:250,max:2},'Devour':{cost:200,max:2,free:1},'Dismiss':{cost:200,max:2},
+  // Reyna's Soul Harvest shares one wheel slot: two purchasable Devours plus one free Dismiss.
+  'Leer':{cost:250,max:2},'Devour / Dismiss':{cost:200,max:3,free:1,purchasableMax:2,noun:'CHARGES'},
   'Barrier Orb':{cost:300,max:1},'Slow Orb':{cost:200,max:2},'Healing Orb':{cost:0,max:1,free:1},
   'Regrowth':{cost:150,max:1},'Trailblazer':{cost:300,max:1},'Guiding Light':{cost:250,max:2,free:1},
   'Shock Bolt':{cost:150,max:2},'Owl Drone':{cost:400,max:1},'Recon Bolt':{cost:0,max:1,free:1},
@@ -75,7 +77,12 @@ const utilityData = {
 };
 const roleColors = {Duelist:'#ff665f',Initiator:'#f3c969',Controller:'#9b7cff',Sentinel:'#53e7db'};
 const keys = ['C','Q','E','X'];
-const state = { agent: agents.find(a => a.name === 'Jett'), results: [], held: new Set(), spinning: false, sound: true, budget:4500 };
+const REGULAR_SPIN_RECHARGE_SECONDS = 15;
+const state = {
+  agent: agents.find(a => a.name === 'Jett'), results: [], held: new Set(), spinning: false,
+  sound: true, budget:4500, weaponMode:'both', allowRespin:false, respinAvailable:false,
+  rechargeRemaining:0, rechargeTimer:null
+};
 
 const $ = (selector) => document.querySelector(selector);
 const select = $('#agentSelect');
@@ -130,7 +137,10 @@ function decorateCurrentResults() {
     if (item.kind === 'weapon') item.icon = weapons.find(w => w.name === item.value)?.icon || null;
     if (item.kind === 'shield') item.icon = shields.find(s => s.name === item.value)?.icon || null;
     if (item.kind === 'ability') {
-      const ability = state.agent.abilities.find(a => normalizeName(typeof a === 'string' ? a : a.name) === normalizeName(item.value));
+      const ability = state.agent.abilities.find(a => {
+        const abilityName = typeof a === 'string' ? a : a.name;
+        return normalizeName(abilityName) === normalizeName(item.value) || normalizeName(abilityName).includes(normalizeName(item.value));
+      });
       item.icon = typeof ability === 'object' ? ability.icon : null;
     }
   });
@@ -142,43 +152,66 @@ function decorateCurrentResults() {
 }
 
 function createResult(agent, heldResults = state.results) {
-  const heldSoulCharge = heldResults.find((item, index) => state.held.has(index) && ['Devour','Dismiss'].includes(item.value) && item.freeUses > 0);
-  const reynaFreeAbility = agent.name === 'Reyna' ? (heldSoulCharge?.value || randomFrom(['Devour','Dismiss'])) : null;
   const abilityItems = agent.abilities.map((ability, i) => {
     const name = typeof ability === 'string' ? ability : ability.name;
-    let utility = utilityData[name] || {cost:0,max:1,free:0};
-    if (['Devour','Dismiss'].includes(name)) utility = {cost:200,max:1,free:name === reynaFreeAbility ? 1 : 0};
-    return {kind:'ability', label:`ABILITY ${keys[i] || i + 1}`, value:name, cost:0,
+    const isUltimate = i === agent.abilities.length - 1;
+    const utility = utilityData[name] || (isUltimate ? {ultimate:true} : {cost:0,max:1,free:1});
+    return {kind:'ability', label:utility.ultimate ? 'ULTIMATE' : `ABILITY ${keys[i] || i + 1}`, value:name, cost:0,
       unitCost:utility.cost, maxUses:utility.max, freeUses:utility.free || 0,
-      icon:typeof ability === 'string' ? null : ability.icon, fallback:keys[i] || String(i + 1)};
+      purchasableMax:utility.purchasableMax, noun:utility.noun, fixed:utility.fixed,
+      ultimate:utility.ultimate, icon:typeof ability === 'string' ? null : ability.icon,
+      fallback:utility.ultimate ? 'X' : keys[i] || String(i + 1)};
   });
   const heldCost = heldResults.reduce((sum, item, index) => state.held.has(index) ? sum + (item.available === false ? 0 : item.cost || 0) : sum, 0);
   let remaining = Math.max(0, state.budget - heldCost);
   const result = [];
 
-  const chooseEquipment = (kind, pool, index) => {
+  const chooseEquipment = (kind, pool, index, label) => {
     if (state.held.has(index) && heldResults[index]) return heldResults[index];
     const eligible = pool.filter(item => item.cost <= remaining);
-    const choice = randomFrom(eligible.length ? eligible : pool.filter(item => item.cost === 0));
+    const choice = randomFrom(eligible);
     remaining -= choice.cost;
     return kind === 'weapon'
-      ? {kind, label:'WEAPON', value:choice.name, meta:`${choice.type} • ${formatCredits(choice.cost)}`, cost:choice.cost, icon:choice.icon, fallback:'W'}
+      ? {kind, label, value:choice.name, meta:`${choice.type} • ${formatCredits(choice.cost)}`, cost:choice.cost, icon:choice.icon, fallback:'W'}
       : {kind, label:'SHIELD', value:choice.name, meta:`${choice.hp} • ${formatCredits(choice.cost)}`, cost:choice.cost, icon:choice.icon, fallback:choice.cost ? 'S' : 'Ø'};
   };
 
-  result.push(chooseEquipment('weapon', weapons, 0));
-  result.push(chooseEquipment('shield', shields, 1));
+  const sidearms = weapons.filter(weapon => weapon.type === 'Sidearm');
+  const primaries = [{name:'No Primary',type:'Primary',cost:0,icon:null}, ...weapons.filter(weapon => weapon.type !== 'Sidearm')];
+  if (state.weaponMode === 'primary' || state.weaponMode === 'both') {
+    result.push(chooseEquipment('weapon', primaries, result.length, 'PRIMARY'));
+  }
+  if (state.weaponMode === 'secondary' || state.weaponMode === 'both') {
+    result.push(chooseEquipment('weapon', sidearms, result.length, 'SECONDARY'));
+  }
+  result.push(chooseEquipment('shield', shields, result.length, 'SHIELD'));
   abilityItems.forEach((item, abilityIndex) => {
-    const index = abilityIndex + 2;
+    const index = result.length;
     if (state.held.has(index) && heldResults[index]) { result.push(heldResults[index]); return; }
-    const purchasableUses = Math.max(0, item.maxUses - item.freeUses);
+    if (item.ultimate) {
+      item.quantity = 0;
+      item.available = true;
+      item.meta = 'ULT POINTS NOT INCLUDED';
+      result.push(item);
+      return;
+    }
+    if (item.fixed) {
+      item.quantity = 1;
+      item.maxUses = 1;
+      item.available = true;
+      item.meta = 'ACTIVATED WITH A STAR';
+      result.push(item);
+      return;
+    }
+    const purchasableUses = item.purchasableMax ?? Math.max(0, item.maxUses - item.freeUses);
     const affordableUses = item.unitCost === 0 ? purchasableUses : Math.min(purchasableUses, Math.floor(remaining / item.unitCost));
     const boughtUses = Math.floor(Math.random() * (affordableUses + 1));
     item.quantity = item.freeUses + boughtUses;
     item.cost = boughtUses * item.unitCost;
     item.available = item.quantity > 0;
     remaining -= item.cost;
-    const usesLabel = `${item.quantity}/${item.maxUses} ${item.maxUses === 1 ? 'USE' : 'USES'}`;
+    let usesLabel = `${item.quantity}/${item.maxUses} ${item.noun || (item.maxUses === 1 ? 'USE' : 'USES')}`;
+    if (item.value === 'Devour / Dismiss') usesLabel = `1 DISMISS + ${boughtUses}/2 DEVOUR`;
     if (!item.available) item.meta = `${usesLabel} • LOCKED`;
     else if (item.cost === 0 && item.freeUses) item.meta = `${usesLabel} • FREE BASE`;
     else item.meta = `${usesLabel} • ${formatCredits(item.cost)}`;
@@ -196,6 +229,7 @@ function resultCost() {
 function renderReels() {
   const reels = $('#reels');
   reels.innerHTML = '';
+  reels.classList.toggle('many-reels', state.results.length > 6);
   state.results.forEach((item, index) => {
     const reel = document.createElement('article');
     reel.className = `reel${state.held.has(index) ? ' held' : ''}${item.kind === 'ability' && !item.available ? ' is-locked' : ''}`;
@@ -203,7 +237,7 @@ function renderReels() {
     reel.dataset.index = index;
     reel.title = state.held.has(index) ? 'Click to release reel' : 'Click to hold reel';
     const icon = item.icon ? `<img src="${item.icon}" alt="${item.value} ${item.kind} icon" width="66" height="56" loading="lazy" decoding="async" />` : item.fallback;
-    const chargeMeter = item.kind === 'ability' && item.maxUses > 1
+    const chargeMeter = item.kind === 'ability' && item.maxUses > 1 && !item.ultimate
       ? `<span class="charge-meter" role="img" aria-label="${item.quantity} of ${item.maxUses} uses">${Array.from({length:item.maxUses}, (_, chargeIndex) => `<i class="${chargeIndex >= item.maxUses - item.quantity ? 'filled' : ''}"></i>`).join('')}</span>`
       : '';
     reel.innerHTML = `<div class="reel-top"><span class="reel-type">${item.label}</span><span>0${index + 1}</span></div>
@@ -226,6 +260,7 @@ function updateCostReadout() {
 function updateAgent(name) {
   state.agent = agents.find(a => a.name === name) || agents[0];
   state.held.clear();
+  resetSpins();
   select.value = state.agent.name;
   $('#activeAgent').textContent = state.agent.name.toUpperCase();
   $('#activeRole').textContent = state.agent.role.toUpperCase();
@@ -240,7 +275,7 @@ function updateAgent(name) {
 }
 
 function toggleHold(index) {
-  if (state.spinning) return;
+  if (state.spinning || !state.allowRespin || !state.respinAvailable) return;
   state.held.has(index) ? state.held.delete(index) : state.held.add(index);
   renderReels();
   playTone(240, .035);
@@ -260,7 +295,8 @@ function playTone(frequency = 180, duration = .05) {
 }
 
 function spin() {
-  if (state.spinning) return;
+  const isRespin = state.respinAvailable;
+  if (state.spinning || (!isRespin && state.rechargeRemaining > 0)) return;
   state.spinning = true;
   $('#spinButton').disabled = true;
   const next = createResult(state.agent);
@@ -282,10 +318,60 @@ function spin() {
   setTimeout(() => {
     state.results = state.results.map((old, i) => state.held.has(i) ? old : next[i]);
     state.spinning = false;
-    $('#spinButton').disabled = false;
+    if (isRespin) {
+      state.respinAvailable = false;
+      state.held.clear();
+      updateSpinControls();
+    } else {
+      state.respinAvailable = state.allowRespin;
+      startRegularSpinRecharge();
+    }
     renderReels();
     playTone(520, .13);
   }, 950);
+}
+
+function resetSpins() {
+  if (state.rechargeTimer) clearInterval(state.rechargeTimer);
+  state.rechargeTimer = null;
+  state.rechargeRemaining = 0;
+  state.respinAvailable = false;
+  updateSpinControls();
+}
+
+function startRegularSpinRecharge() {
+  if (state.rechargeTimer) clearInterval(state.rechargeTimer);
+  state.rechargeRemaining = REGULAR_SPIN_RECHARGE_SECONDS;
+  updateSpinControls();
+  state.rechargeTimer = setInterval(() => {
+    state.rechargeRemaining--;
+    if (state.rechargeRemaining <= 0) {
+      clearInterval(state.rechargeTimer);
+      state.rechargeTimer = null;
+      state.rechargeRemaining = 0;
+      state.respinAvailable = false;
+      state.held.clear();
+      renderReels();
+    }
+    updateSpinControls();
+  }, 1000);
+}
+
+function updateSpinControls() {
+  const recharging = state.rechargeRemaining > 0;
+  const button = $('#spinButton');
+  const waitingForRegularSpin = recharging && !state.respinAvailable;
+  button.disabled = state.spinning || waitingForRegularSpin;
+  button.querySelector('.spin-label').textContent = state.respinAvailable
+    ? 'RESPIN LOADOUT'
+    : recharging ? `SPIN IN ${state.rechargeRemaining}S` : 'SPIN LOADOUT';
+  $('#spinCount').textContent = state.respinAvailable ? '1' : recharging ? `${state.rechargeRemaining}s` : '∞';
+  $('#spinCount').setAttribute('aria-label', state.respinAvailable
+    ? 'One instant respin available'
+    : recharging ? `Next regular spin ready in ${state.rechargeRemaining} seconds` : 'Regular spin ready');
+  $('#holdHint').textContent = state.respinAvailable
+    ? 'CLICK REELS TO HOLD THEM FOR YOUR INSTANT RESPIN'
+    : state.allowRespin ? 'SPIN TO UNLOCK ONE INSTANT HELD-REEL RESPIN' : 'OPTIONAL RESPIN IS DISABLED';
 }
 
 function copyResult() {
@@ -310,6 +396,7 @@ $('#creditsInput').addEventListener('input', e => {
   const value = Math.max(0, Math.min(9000, Number(e.target.value) || 0));
   state.budget = value;
   state.held.clear();
+  resetSpins();
   document.querySelectorAll('.reel.held').forEach(reel => reel.classList.remove('held'));
   updateCostReadout();
 });
@@ -317,6 +404,20 @@ $('#creditsInput').addEventListener('change', e => {
   e.target.value = state.budget;
 });
 $('#randomAgent').addEventListener('click', () => updateAgent(randomFrom(agents).name));
+document.querySelectorAll('input[name="weaponMode"]').forEach(input => input.addEventListener('change', e => {
+  state.weaponMode = e.target.value;
+  state.held.clear();
+  resetSpins();
+  state.results = createResult(state.agent, []);
+  renderReels();
+}));
+$('#allowRespin').addEventListener('change', e => {
+  state.allowRespin = e.target.checked;
+  if (!state.allowRespin) state.respinAvailable = false;
+  state.held.clear();
+  updateSpinControls();
+  renderReels();
+});
 $('#spinButton').addEventListener('click', spin);
 $('#copyButton').addEventListener('click', copyResult);
 $('#soundButton').addEventListener('click', () => {

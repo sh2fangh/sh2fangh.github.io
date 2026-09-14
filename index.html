@@ -111,15 +111,29 @@
           </div>
         </div>
 
+        <div class="wheel-settings" aria-label="Wheel settings">
+          <fieldset class="weapon-setting">
+            <legend>WEAPON SLOTS</legend>
+            <label><input type="radio" name="weaponMode" value="primary" /><span>PRIMARY</span></label>
+            <label><input type="radio" name="weaponMode" value="secondary" /><span>SECONDARY</span></label>
+            <label><input type="radio" name="weaponMode" value="both" checked /><span>BOTH</span></label>
+          </fieldset>
+          <label class="respin-setting">
+            <input type="checkbox" id="allowRespin" />
+            <span class="toggle-track" aria-hidden="true"><i></i></span>
+            <span><b>OPTIONAL RESPIN</b><small>ONE INSTANT HELD-REEL REROLL</small></span>
+          </label>
+        </div>
+
         <div class="reels" id="reels" aria-live="polite"></div>
 
         <div class="machine-controls">
-          <p>CLICK A REEL TO HOLD IT BETWEEN SPINS</p>
+          <p id="holdHint">OPTIONAL RESPIN IS DISABLED</p>
           <button class="spin-button" id="spinButton">
             <span class="button-corners" aria-hidden="true"></span>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v6h-6"/></svg>
-            <span>SPIN LOADOUT</span>
-            <small id="spinCount">∞</small>
+            <span class="spin-label">SPIN LOADOUT</span>
+            <small id="spinCount" aria-label="Regular spin ready">∞</small>
           </button>
           <button class="copy-button" id="copyButton" title="Copy this loadout">
             <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="11" height="11" rx="1"/><path d="M16 8V5H5v11h3"/></svg>
@@ -133,7 +147,7 @@
         <div class="rule-grid">
           <article><b>01</b><h3>CHOOSE YOUR AGENT</h3><p>Select any VALORANT agent from the full roster or pick one at random.</p></article>
           <article><b>02</b><h3>SET YOUR ROUND CREDITS</h3><p>Enter your available credits. Each complete weapon, shield, and utility roll stays within that budget.</p></article>
-          <article><b>03</b><h3>SPIN YOUR LOADOUT</h3><p>Use the generated buy as a challenge, or hold individual reels and spin again before the round starts.</p></article>
+          <article><b>03</b><h3>SPIN YOUR LOADOUT</h3><p>Fresh spins recharge in 15 seconds. If enabled, each fresh result gets one instant held-reel respin.</p></article>
         </div>
       </section>
     </main>
